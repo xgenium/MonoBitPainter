@@ -1,4 +1,5 @@
 # Ignore backup files with .un extension
 *.un
+*.txt
 
 mono_bitpainter
