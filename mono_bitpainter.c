@@ -45,7 +45,6 @@ int main(int argc, char *argv[])
         EndDrawing();
     }
     CloseWindow();
-    UnloadFont(app.fontData);
     return EXIT_SUCCESS;
 }
 
