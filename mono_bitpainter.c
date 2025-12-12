@@ -181,9 +181,9 @@ int save_results(AppContext_t *app)
 
     int i;
     for (i = 0; i < get_total_bytes(app) - 1; i++)
-        fprintf(f, "%02X, ", app->output_bits[i]);
+        fprintf(f, "0x%02X, ", app->output_bits[i]);
 
-    fprintf(f, "%02X", app->output_bits[i]);
+    fprintf(f, "0x%02X", app->output_bits[i]);
     fprintf(f, "\n");
 
     fclose(f);
