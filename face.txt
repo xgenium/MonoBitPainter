@@ -1,4 +1,0 @@
-ROWS= 6
-COLUMNS= 7
-DATA=
-45, DD, 10, 84, 47, 00

@@ -12,6 +12,9 @@ I made this program to help me draw sprites for my retro, monochrome game. Don't
 - Save and load drawings
 - Resizable window with centered grid
 
+## Demo
+[![Watch the video](https://raw.githubusercontent.com/xgenium/MonoBitPainter/main/assets/thumbnail.jpg)](https://raw.githubusercontent.com/xgenium/MonoBitPainter/main/assets/program_demo.mp4)
+
 ## Flags
 - `-help`: Prints program usage
 - `-rows <N>`: Set initial number of rows (default: 16)
