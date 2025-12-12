@@ -13,7 +13,7 @@ I made this program to help me draw sprites for my retro, monochrome game. Don't
 - Resizable window with centered grid
 
 ## Demo
-
+![](https://github.com/xgenium/MonoBitPainter/blob/main/demo.gif)
 
 ## Flags
 - `-help`: Prints program usage
