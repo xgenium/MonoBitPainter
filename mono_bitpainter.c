@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include "mono_bitpainter.h"
@@ -125,42 +126,58 @@ int get_total_bytes(const AppContext_t *app)
 // Packs grid bits into output byte array (Big-Endian)
 void pack_bits(AppContext_t *app)
 {
-   uint8_t current_byte = 0;
-   int bit_index, byte_index;
-   bit_index = byte_index = 0;
-   for (int r = 0; r < app->rows; r++) {
-        for (int c = 0; c < app->columns; c++) {
-            int cell_value = app->data[r][c];
-            uint8_t shifted_value = (uint8_t)(cell_value << (7 - bit_index));
-            current_byte |= shifted_value;
-            bit_index++;
-            if (bit_index == BYTE_SIZE) {
-                app->output_bits[byte_index] = current_byte;
-                byte_index++;
-                current_byte = 0;
-                bit_index = 0;
+    uint8_t curr_byte = 0;
+    int16_t byte_width = (app->columns + 7) / BYTE_SIZE;
+
+    // Reset the destination array (optional, but good practice if it's reused)
+    for (size_t i = 0; i < app->columns * byte_width; i++) {
+        app->output_bits[i] = 0;
+    }
+
+    for (int c = 0; c < app->columns; c++) {
+        for (int r = 0; r < app->rows; r++) {
+            uint8_t bit_val = app->data[r][c] & 0x01; // Ensure it's just 0 or 1
+
+            // Check if this is the start of a new byte (r = 0, 8, 16, ...)
+            if ((r & 7) == 0)
+                curr_byte = 0;
+
+            // Unpack logic:
+            // r=0: new byte loaded, curr_byte & 0x80 gives app->data[0][c]
+            // r=1: curr_byte <<= 1, curr_byte & 0x80 gives app->data[1][c]
+            //
+            // Pack logic must reverse this:
+            // r=0: bit_val is placed at MSB (<< 7)
+            // r=1: bit_val is placed at the second MSB (<< 6)
+
+            // To achieve the MSB-first ordering:
+            // The bit for row 'r' must be shifted to the position 7 - (r % 8).
+            curr_byte |= (bit_val << (7 - (r & 7)));
+
+            //  Check if the byte is complete or if this is the last bit
+            if ((r & 7) == 7 || r == app->rows - 1) {
+                int16_t index = c * byte_width + r / 8;
+
+                app->output_bits[index] = curr_byte;
             }
         }
-   }
-   if (bit_index > 0) {
-        app->output_bits[byte_index] = current_byte;
-        byte_index++;
-   }
+    }
 }
 
 // Unpacks bits from output byte array back into grid
 void unpack_bits(AppContext_t *app)
 {
-    int bit_index = 0;
-    int byte_index = 0;
-    for (int r = 0; r < app->rows; r++) {
-        for (int c = 0; c < app->columns; c++) {
-            byte_index = bit_index / BYTE_SIZE;
-            int bit_in_byte = bit_index % BYTE_SIZE;
-            uint8_t current_byte = app->output_bits[byte_index];
-            int cell_value = (current_byte >> (7 - bit_in_byte)) & 1;
-            app->data[r][c] = cell_value;
-            bit_index++;
+    uint8_t curr_byte = 0;
+    int16_t byte_width = (app->columns + 7) / BYTE_SIZE;
+   for (int c = 0; c < app->columns; c++) {
+        for (int r = 0; r < app->rows; r++) {
+            if (r & 7)
+                curr_byte <<= 1;
+            else
+                curr_byte = app->output_bits[c * byte_width + r / 8];
+
+            if (curr_byte & 0x80)
+                app->data[r][c] = 1;
         }
     }
 }
