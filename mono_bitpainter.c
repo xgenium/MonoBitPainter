@@ -1,8 +1,6 @@
-#include <stdio.h>
+#include <raylib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
-#include "raylib.h"
 #include "mono_bitpainter.h"
 
 int main(int argc, char *argv[])
@@ -19,6 +17,9 @@ int main(int argc, char *argv[])
     SetTraceLogLevel(LOG_ERROR);
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 800, "BitPainter");
+
+    // NOTE: Fonts MUST be loaded after Window initialization (OpenGL context is required)
+    app.fontData = LoadFontEx(FONT_PATH, 100, NULL, 250);
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
@@ -26,25 +27,25 @@ int main(int argc, char *argv[])
             break;
 
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+            ClearBackground(RAYWHITE);
 
-        app.screen_width = GetScreenWidth();
-        app.screen_height = GetScreenHeight();
-        app.cell_size = get_cell_size(&app);
+            app.screen_width = GetScreenWidth();
+            app.screen_height = GetScreenHeight();
+            app.cell_size = get_cell_size(&app);
 
-        get_offset(&app);
-        draw_grid(&app);
+            get_offset(&app);
+            draw_grid(&app);
 
-        if (app.output_saved_text &&
-            (GetTime() - app.text_init_time) < TEXT_LIFETIME_SECONDS) {
-            output_text("Saved", 50, &app);
-        }
+            if (app.output_saved_text &&
+                (GetTime() - app.text_init_time) < TEXT_LIFETIME_SECONDS) {
+                output_text("Saved", 100, &app);
+            }
 
-        handle_mouse_input(&app);
-
+            handle_mouse_input(&app);
         EndDrawing();
     }
     CloseWindow();
+    UnloadFont(app.fontData);
     return EXIT_SUCCESS;
 }
 
@@ -198,7 +199,7 @@ void output_text(const char *text, int fontSize, AppContext_t *app)
 {
     int x = app->screen_width / 2 - fontSize;
     int y = app->screen_height / 2 - fontSize;
-    DrawText(text, x, y, fontSize, GREEN);
+    DrawTextEx(app->fontData, text, (Vector2){ (float)x, (float)y }, fontSize, 2, GREEN);
 }
 
 void print_usage()

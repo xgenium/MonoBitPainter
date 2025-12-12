@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -g -Wall -Werror
+CFLAGS = -g -Wall -Werror -std=c23
 LDFLAGS = -lraylib
 TARGET = mono_bitpainter
 SRC = mono_bitpainter.c

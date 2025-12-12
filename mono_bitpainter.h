@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include "raylib.h"
 
 #ifndef MONO_BIT_PAINTER_H
 #define MONO_BIT_PAINTER_H
@@ -22,6 +23,8 @@
 
 // Each byte is represented as "XX, " (3 chars) except possibly the last one; +1 for string terminator
 #define MAX_HEX_STRING_LENGTH (MAX_OUTPUT_BYTES * 3 + 1)
+
+#define FONT_PATH "fonts/ChakraPetch-Bold.ttf"
 
 // UI text visibility duration (in seconds) for status messages (e.g., "Saved")
 #define TEXT_LIFETIME_SECONDS 3
@@ -56,6 +59,8 @@ typedef struct {
 
     bool load;
     bool output_saved_text;
+
+    Font fontData;
 } AppContext_t;
 
 int get_cell_size(const AppContext_t *app);
