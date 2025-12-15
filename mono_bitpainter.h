@@ -15,6 +15,10 @@
 #define MAX_ROWS 32
 #define MAX_COLUMNS 32
 
+// Calculates bytes needed PER COLUMN to store all rows
+#define COLUMN_BYTE_HEIGHT(app)    (((app)->rows + 7) / 8)
+#define TOTAL_BYTES(app)           ((app)->columns * COLUMN_BYTE_HEIGHT(app))
+
 // Number of bytes needed to store MAX_ROWS * MAX_COLUMNS bits (+7 for ceiling division)
 #define MAX_OUTPUT_BYTES ((MAX_ROWS * MAX_COLUMNS + 7) / BYTE_SIZE)
 
@@ -68,7 +72,6 @@ void get_offset(AppContext_t *app);
 void draw_grid(const AppContext_t *app);
 void handle_mouse_input(AppContext_t *app);
 int handle_keyboard(AppContext_t *app);
-int get_total_bytes(const AppContext_t *app);
 void pack_bits(AppContext_t *app);
 void unpack_bits(AppContext_t *app);
 int save_results(AppContext_t *app);

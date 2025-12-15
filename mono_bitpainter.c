@@ -117,67 +117,41 @@ int handle_keyboard(AppContext_t *app)
     return 0;
 }
 
-// Calculates total bytes needed to store packed bits
-int get_total_bytes(const AppContext_t *app)
-{
-    return (app->rows * app->columns + 7) / BYTE_SIZE;
-}
-
 // Packs grid bits into output byte array (Big-Endian)
-void pack_bits(AppContext_t *app)
-{
-    uint8_t curr_byte = 0;
-    int16_t byte_width = (app->columns + 7) / BYTE_SIZE;
-
-    // Reset the destination array (optional, but good practice if it's reused)
-    for (size_t i = 0; i < app->columns * byte_width; i++) {
-        app->output_bits[i] = 0;
-    }
-
+void pack_bits(AppContext_t *app) {
+    int byte_height = COLUMN_BYTE_HEIGHT(app);
+    memset(app->output_bits, 0, TOTAL_BYTES(app));
     for (int c = 0; c < app->columns; c++) {
-        for (int r = 0; r < app->rows; r++) {
-            uint8_t bit_val = app->data[r][c] & 0x01; // Ensure it's just 0 or 1
-
-            // Check if this is the start of a new byte (r = 0, 8, 16, ...)
-            if ((r & 7) == 0)
-                curr_byte = 0;
-
-            // Unpack logic:
-            // r=0: new byte loaded, curr_byte & 0x80 gives app->data[0][c]
-            // r=1: curr_byte <<= 1, curr_byte & 0x80 gives app->data[1][c]
-            //
-            // Pack logic must reverse this:
-            // r=0: bit_val is placed at MSB (<< 7)
-            // r=1: bit_val is placed at the second MSB (<< 6)
-
-            // To achieve the MSB-first ordering:
-            // The bit for row 'r' must be shifted to the position 7 - (r % 8).
-            curr_byte |= (bit_val << (7 - (r & 7)));
-
-            //  Check if the byte is complete or if this is the last bit
-            if ((r & 7) == 7 || r == app->rows - 1) {
-                int16_t index = c * byte_width + r / 8;
-
-                app->output_bits[index] = curr_byte;
+        for (int b = 0; b < byte_height; b++) {
+            uint8_t byte = 0;
+            for (int bit = 0; bit < 8; bit++) {
+                int r = b*8 + bit;
+                if (r < app->rows) {
+                    if (app->data[r][c])
+                        byte |= (1 << (7-bit));  // MSB-top-down
+                }
             }
+            app->output_bits[c*byte_height + b] = byte;
         }
     }
 }
 
 // Unpacks bits from output byte array back into grid
-void unpack_bits(AppContext_t *app)
-{
-    uint8_t curr_byte = 0;
-    int16_t byte_width = (app->columns + 7) / BYTE_SIZE;
-   for (int c = 0; c < app->columns; c++) {
+// Unpack logic:
+// r=0: new byte loaded, curr_byte & 0x80 gives app->data[0][c]
+// r=1: curr_byte <<= 1, curr_byte & 0x80 gives app->data[1][c]
+//
+// Pack logic must reverse this:
+// r=0: bit_val is placed at MSB (<< 7)
+// r=1: bit_val is placed at the second MSB (<< 6)
+void unpack_bits(AppContext_t *app) {
+    int byte_height = COLUMN_BYTE_HEIGHT(app);
+    for (int c = 0; c < app->columns; c++) {
         for (int r = 0; r < app->rows; r++) {
-            if (r & 7)
-                curr_byte <<= 1;
-            else
-                curr_byte = app->output_bits[c * byte_width + r / 8];
-
-            if (curr_byte & 0x80)
-                app->data[r][c] = 1;
+            int b = r / 8;
+            int bit = 7 - (r % 8); // restore MSB = row 0
+            uint8_t byte = app->output_bits[c*byte_height + b];
+            app->data[r][c] = (byte & (1 << bit)) ? 1 : 0;
         }
     }
 }
@@ -197,7 +171,7 @@ int save_results(AppContext_t *app)
     fprintf(f, "DATA=\n");
 
     int i;
-    for (i = 0; i < get_total_bytes(app) - 1; i++)
+    for (i = 0; i < TOTAL_BYTES(app) - 1; i++)
         fprintf(f, "0x%02X, ", app->output_bits[i]);
 
     fprintf(f, "0x%02X", app->output_bits[i]);
