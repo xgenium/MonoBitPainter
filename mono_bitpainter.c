@@ -64,12 +64,12 @@ void get_offset(AppContext_t *app)
 void draw_grid(const AppContext_t *app)
 {
     int x, y;
-    for (int r = 0; r < app->rows; r++) {
-        for (int c = 0; c < app->columns; c++) {
+    for (int c = 0; c < app->columns; c++) {
+	for (int r = 0; r < app->rows; r++) {
             x = app->offset_x + c * app->cell_size;
             y = app->offset_y + r * app->cell_size;
             DrawRectangleLines(x, y, app->cell_size, app->cell_size, BLACK);
-            if (app->data[r][c])
+            if (app->data[c][r])
                 DrawRectangle(x, y, app->cell_size, app->cell_size, BLACK);
         }
    }
@@ -87,9 +87,9 @@ void handle_mouse_input(AppContext_t *app)
             row = relative_y / app->cell_size;
             column = relative_x / app->cell_size;
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
-                app->data[row][column] = 1;
+                app->data[column][row] = 1;
             if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
-                app->data[row][column] = 0;
+                app->data[column][row] = 0;
         }
     }
 }
@@ -117,42 +117,36 @@ int handle_keyboard(AppContext_t *app)
     return 0;
 }
 
-// Packs grid bits into output byte array (Big-Endian)
+// Packs grid bits into output byte array (Vertical packing)
 void pack_bits(AppContext_t *app) {
-    int byte_height = COLUMN_BYTE_HEIGHT(app);
+    int bytes_per_row = BYTES_PER_ROW(app);
     memset(app->output_bits, 0, TOTAL_BYTES(app));
-    for (int c = 0; c < app->columns; c++) {
-        for (int b = 0; b < byte_height; b++) {
-            uint8_t byte = 0;
-            for (int bit = 0; bit < 8; bit++) {
-                int r = b*8 + bit;
-                if (r < app->rows) {
-                    if (app->data[r][c])
-                        byte |= (1 << (7-bit));  // MSB-top-down
-                }
+
+    for (int r = 0; r < app->rows; r++) {
+        for (int c = 0; c < app->columns; c++) {
+            if (app->data[c][r]) {
+                int byte_idx = (r * bytes_per_row) + (c / 8);
+                int bit_pos = 7 - (c % 8);
+                app->output_bits[byte_idx] |= (1 << bit_pos);
             }
-            app->output_bits[c*byte_height + b] = byte;
         }
     }
 }
 
+// packing logic:
+// byte 1 will contain the first 8 pixels of row 0
+// byte 2 will contain the next 8 pixels of row 0, and so on
+
 // Unpacks bits from output byte array back into grid
-// Unpack logic:
-// r=0: new byte loaded, curr_byte & 0x80 gives app->data[0][c]
-// r=1: curr_byte <<= 1, curr_byte & 0x80 gives app->data[1][c]
-//
-// Pack logic must reverse this:
-// r=0: bit_val is placed at MSB (<< 7)
-// r=1: bit_val is placed at the second MSB (<< 6)
 void unpack_bits(AppContext_t *app) {
-    int byte_height = COLUMN_BYTE_HEIGHT(app);
-    for (int c = 0; c < app->columns; c++) {
-        for (int r = 0; r < app->rows; r++) {
-            int b = r / 8;
-            int bit = 7 - (r % 8); // restore MSB = row 0
-            uint8_t byte = app->output_bits[c*byte_height + b];
-            app->data[r][c] = (byte & (1 << bit)) ? 1 : 0;
-        }
+    int bytes_per_row = BYTES_PER_ROW(app);
+    for (int r = 0; r < app->rows; r++) {
+	for (int c = 0; c < app->columns; c++) {
+	    int byte_idx = (r * bytes_per_row) + (c / 8);
+	    int bit_pos = 7 - (c % 8);
+	    uint8_t byte = app->output_bits[byte_idx];
+	    app->data[c][r] = (byte & (1 << bit_pos)) ? 1 : 0;
+	}
     }
 }
 
@@ -224,6 +218,7 @@ int handle_flags(int argc, char *argv[], AppContext_t *app)
             app->load = true;
         } else if (strcmp(argv[i], "-help") == 0) {
             print_usage();
+	    exit(0);
         }
     }
     return EXIT_SUCCESS;

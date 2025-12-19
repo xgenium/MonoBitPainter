@@ -16,8 +16,8 @@
 #define MAX_COLUMNS 32
 
 // Calculates bytes needed PER COLUMN to store all rows
-#define COLUMN_BYTE_HEIGHT(app)    (((app)->rows + 7) / 8)
-#define TOTAL_BYTES(app)           ((app)->columns * COLUMN_BYTE_HEIGHT(app))
+#define BYTES_PER_ROW(app)    (((app)->columns + 7) / 8)
+#define TOTAL_BYTES(app)           (BYTES_PER_ROW(app) * (app)->rows)
 
 // Number of bytes needed to store MAX_ROWS * MAX_COLUMNS bits (+7 for ceiling division)
 #define MAX_OUTPUT_BYTES ((MAX_ROWS * MAX_COLUMNS + 7) / BYTE_SIZE)
@@ -41,7 +41,7 @@
 typedef struct {
     uint8_t output_bits[MAX_OUTPUT_BYTES];
 
-    char data[MAX_ROWS][MAX_COLUMNS];
+    char data[MAX_COLUMNS][MAX_ROWS];
 
     int rows;
     int columns;
