@@ -27,7 +27,7 @@ I made this program to help me draw sprites for my retro, monochrome game. Don't
 Text file with:
 - `ROWS= <n>`
 - `COLUMNS= <n>`
-- `DATA=` followed by new line and comma-separated hex bytes representing packed bits (Big-Endian order)
+- `DATA=` followed by new line and comma-separated hex bytes representing packed bits
 
 ## Build
 Ensure raylib is installed, then compile:
