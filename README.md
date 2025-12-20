@@ -4,7 +4,6 @@ MonoBitPainter is a simple monochrome grid editor built with raylib. It lets you
 
 I made this program to help me draw sprites for my retro, monochrome game. Don't expect anything from the code because it's my one of the first projects in C.
 
-(it looks like I messed up rows with collumns. If bitmap looks weird, try changing rows and collumns with each other)
 
 ## Features
 - Paint cells with the mouse:
